@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>React Redux UnderTheHood</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <div id="root"></div>
+
+  <script>
+    // State
+    const state = {
+      currentTime: new Date(),
+      lots: [
+        {
+          id: 1,
+          name: "Apple",
+          description: "Apple description",
+          price: 16
+        }, {
+          id: 2,
+          name: "Orange",
+          description: "Orange description",
+          price: 41
+        }]
+    }
+
+    const app = document.createElement('main')
+    app.className = 'app'
+
+    // Header
+    const header = document.createElement('header')
+    header.classList.add('header')
+
+    // Logo
+    const logo = document.createElement('img')
+    logo.classList.add('logo')
+    logo.src = './chilli.png'
+    header.append(logo)
+    app.append(header)
+
+    // Clock
+    const clock = document.createElement('div')
+    clock.className = 'clock'
+    clock.innerText = state.currentTime.toLocaleTimeString()
+    app.append(clock)
+
+    // Lots
+    const lots = document.createElement('div')
+    lots.className = 'lots'
+
+    state.lots.forEach(lot => {
+      const node = document.createElement('article')
+      node.className = 'lot'
+
+      const price = document.createElement('div')
+      price.className = 'price'
+      price.innerText = lot.price
+      node.append(price)
+
+      const name = document.createElement('h1')
+      name.innerText = lot.name
+      node.append(name)
+
+      const description = document.createElement('p')
+      description.innerText = lot.description
+      node.append(description)
+
+      lots.append(node)
+    })
+    app.append(lots)
+
+    // Root element
+    const rootElement = document.getElementById('root')
+    rootElement.append(app)
+  </script>
+</body>
+
+</html>
