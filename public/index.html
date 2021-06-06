@@ -13,25 +13,29 @@
   <div id="root"></div>
 
   <script>
-    // API
+
+    // Imitate API
     const api = {
       get(url) {
         switch (url) {
           case '/lots':
             return new Promise((resolve, _) => {
+              const mockLots = [
+                {
+                  id: 1,
+                  name: "Apple",
+                  description: "Apple description",
+                  price: 16
+                }, {
+                  id: 2,
+                  name: "Orange",
+                  description: "Orange description",
+                  price: 41
+                }]
+
+              // resolve promise with mocked lots after timeout to imitate fetching
               setTimeout(() => {
-                resolve([
-                  {
-                    id: 1,
-                    name: "Apple",
-                    description: "Apple description",
-                    price: 16
-                  }, {
-                    id: 2,
-                    name: "Orange",
-                    description: "Orange description",
-                    price: 41
-                  }])
+                resolve(mockLots)
               }, 1000)
 
             })
@@ -62,7 +66,7 @@
       lots: null
     }
 
-    // App
+    // App node
     function App({ state }) {
       const app = document.createElement('main')
       app.className = 'app'
@@ -72,7 +76,7 @@
       return app
     }
 
-    // Header
+    // Header node
     function Header() {
       const header = document.createElement('header')
       header.classList.add('header')
@@ -80,7 +84,7 @@
       return header
     }
 
-    // logo
+    // Logo node
     function Logo() {
       const logo = document.createElement('img')
       logo.classList.add('logo')
@@ -88,7 +92,7 @@
       return logo
     }
 
-    // Clock
+    // Clock node
     function Clock({ time }) {
       const node = document.createElement('div')
       node.className = 'clock'
@@ -111,6 +115,7 @@
       return node
     }
 
+    // Loading node
     function Loading() {
       const node = document.createElement('div')
       node.className = 'loading'
@@ -118,7 +123,7 @@
       return node
     }
 
-    // Lots
+    // Lots node
     function Lots({ lots }) {
 
       if (lots === null) {
@@ -133,7 +138,7 @@
       return list
     }
 
-    // Lot
+    // Lot node
     function Lot({ lot }) {
       const node = document.createElement('article')
       node.className = 'lot'
@@ -154,9 +159,7 @@
       return node
     }
 
-    renderApp(state)
-
-    // First render
+    // Render app helper
     function renderApp(state) {
       render(
         App({ state }),
@@ -164,55 +167,59 @@
       )
     }
 
+    // First render
+    renderApp(state)
+
+    // Make api call after first render
     api.get('/lots')
       .then(lots => {
         state = { ...state, lots }
+
+        // rerender app after receiving api response with the new state
         renderApp(state)
 
         const onPrice = (data) => {
+          const lotsWithUpdatedPrice = state.lots.map(lot => {
+            if (lot.id !== data.id) return lot
+            return { ...lot, price: data.price }
+          })
           state = {
             ...state,
-            lots: state.lots.map(lot => {
-              if (lot.id !== data.id) return lot
-              return {
-                ...lot,
-                price: data.price
-              }
-            })
+            lots: lotsWithUpdatedPrice
           }
+
+          // rerender on every price update with the new state
           renderApp(state)
         }
 
+        // subscribe to a pseudo web socket to update prices for each lots element
         lots.forEach(lot => {
           stream.subscribe(`price-${lot.id}`, onPrice)
         })
       })
       .catch(console.log)
 
-    // Rerender on each tick
+    // Rerender the app on each tick (time update)
     setInterval(() => {
       state = {
         ...state,
         currentTime: new Date()
       }
-
       renderApp(state)
     }, 1000)
 
     // Render implementation
-    // 1.           main.app     div#root > main.app
-    // 2.           div#root > main.app     div#root > main.app
+    // 1.  before   main.app     div#root > main.app
+    // 2.  after    div#root > main.app     div#root > main.app
     function render(virtualDom, realDomRoot) {
       const virtualDomRoot = document.createElement(realDomRoot.tagName)
       virtualDomRoot.id = realDomRoot.id
       virtualDomRoot.append(virtualDom)
-
       sync(virtualDomRoot, realDomRoot)
     }
 
     function sync(virtualNode, realNode) {
       // Sync element
-
       if (virtualNode.id !== realNode.id) {
         realNode.id = virtualNode.id
       }
@@ -232,7 +239,6 @@
       }
 
       // Sync child nodes
-
       const virtualChildren = virtualNode.childNodes
       const realChildren = realNode.childNodes
 
