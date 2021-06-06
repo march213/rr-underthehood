@@ -69,3 +69,20 @@ body {
   float: right;
   font-weight: bold; 
 }
+
+.clock .icon {
+  display: inline-block;
+  vertical-align: middle;
+  width: 15px;
+  height: 15px;
+  margin-left: 8px;
+  border-radius: 50%;
+}
+
+.clock .icon.day {
+  background-color: yellow;
+}
+
+.clock .icon.night {
+  background-color: darkblue;
+}
