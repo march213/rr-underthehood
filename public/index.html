@@ -30,31 +30,52 @@
         }]
     }
 
-    const app = document.createElement('main')
-    app.className = 'app'
+    // App
+    function App({ state }) {
+      const app = document.createElement('main')
+      app.className = 'app'
+      app.append(Header())
+      app.append(Clock({ time: state.currentTime }))
+      app.append(Lots({ lots: state.lots }))
+      return app
+    }
 
     // Header
-    const header = document.createElement('header')
-    header.classList.add('header')
+    function Header() {
+      const header = document.createElement('header')
+      header.classList.add('header')
+      header.append(Logo())
+      return header
+    }
 
-    // Logo
-    const logo = document.createElement('img')
-    logo.classList.add('logo')
-    logo.src = './chilli.png'
-    header.append(logo)
-    app.append(header)
+    // logo
+    function Logo() {
+      const logo = document.createElement('img')
+      logo.classList.add('logo')
+      logo.src = './chilli.png'
+      return logo
+    }
 
     // Clock
-    const clock = document.createElement('div')
-    clock.className = 'clock'
-    clock.innerText = state.currentTime.toLocaleTimeString()
-    app.append(clock)
+    function Clock({ time }) {
+      const clock = document.createElement('div')
+      clock.className = 'clock'
+      clock.innerText = time.toLocaleTimeString()
+      return clock
+    }
 
     // Lots
-    const lots = document.createElement('div')
-    lots.className = 'lots'
+    function Lots({ lots }) {
+      const list = document.createElement('div')
+      list.className = 'lots'
+      lots.forEach(lot => {
+        list.append(Lot({ lot }))
+      })
+      return list
+    }
 
-    state.lots.forEach(lot => {
+    // Lot
+    function Lot({ lot }) {
       const node = document.createElement('article')
       node.className = 'lot'
 
@@ -71,13 +92,15 @@
       description.innerText = lot.description
       node.append(description)
 
-      lots.append(node)
-    })
-    app.append(lots)
+      return node
+    }
 
-    // Root element
-    const rootElement = document.getElementById('root')
-    rootElement.append(app)
+    // Render
+    function render(newDom, realDomRoot) {
+      realDomRoot.append(newDom)
+    }
+
+    render(App({ state }), document.getElementById('root'))
   </script>
 </body>
 
