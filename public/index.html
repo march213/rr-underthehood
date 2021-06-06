@@ -117,14 +117,12 @@
 
     setInterval(() => {
       const currentTime = new Date()
-      const clock = document.getElementById('root').querySelector('.app > .clock')
-      clock.querySelector('.value').innerText = currentTime.toLocaleTimeString()
+      const app = document.getElementById('root').querySelector('.app')
 
-      if (currentTime.getHours() >= 7 && currentTime.getHours() <= 21) {
-        clock.querySelector('.icon').className = 'icon day'
-      } else {
-        clock.querySelector('.icon').className = 'icon night'
-      }
+      const clock = app.querySelector('.clock')
+      const newClock = Clock({ time: currentTime })
+
+      app.replaceChild(newClock, clock)
     }, 1000)
 
     render(App({ state }), document.getElementById('root'))
