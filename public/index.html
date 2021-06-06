@@ -14,7 +14,7 @@
 
   <script>
     // State
-    const state = {
+    let state = {
       currentTime: new Date(),
       lots: [
         {
@@ -110,23 +110,30 @@
       return node
     }
 
+    renderApp(state)
+
     // Render
     function render(newDom, realDomRoot) {
       realDomRoot.innerHTML = ''
       realDomRoot.append(newDom)
     }
 
+    function renderApp(state) {
+      render(
+        App({ state }),
+        document.getElementById('root')
+      )
+    }
+
     // Rerender on each tick
     setInterval(() => {
-      const currentTime = new Date()
-      render(
-        App({
-          state: { ...state, currentTime }
-        }),
-        document.getElementById('root'))
-    }, 1000)
+      state = {
+        ...state,
+        currentTime: new Date()
+      }
 
-    render(App({ state }), document.getElementById('root'))
+      renderApp(state)
+    }, 1000)
   </script>
 </body>
 
