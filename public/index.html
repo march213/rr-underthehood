@@ -112,16 +112,18 @@
 
     // Render
     function render(newDom, realDomRoot) {
+      realDomRoot.innerHTML = ''
       realDomRoot.append(newDom)
     }
 
+    // Rerender on each tick
     setInterval(() => {
       const currentTime = new Date()
-      const root = document.getElementById('root')
-      const newApp = App({ state: { ...state, currentTime } })
-
-      root.innerHTML = ''
-      root.append(newApp)
+      render(
+        App({
+          state: { ...state, currentTime }
+        }),
+        document.getElementById('root'))
     }, 1000)
 
     render(App({ state }), document.getElementById('root'))
