@@ -117,12 +117,12 @@
 
     setInterval(() => {
       const currentTime = new Date()
-      const app = document.getElementById('root').querySelector('.app')
+      const root = document.getElementById('root')
 
-      const clock = app.querySelector('.clock')
-      const newClock = Clock({ time: currentTime })
+      const app = root.querySelector('.app')
+      const newApp = App({ state: { ...state, currentTime } })
 
-      app.replaceChild(newClock, clock)
+      root.replaceChild(newApp, app)
     }, 1000)
 
     render(App({ state }), document.getElementById('root'))
