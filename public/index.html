@@ -64,10 +64,29 @@
     }
 
     // State
-    let state = {
+    const initialState = {
       currentTime: new Date(),
       lots: null
     }
+
+    class Store {
+      constructor(state = {}) {
+        this.state = state
+      }
+
+      getState() {
+        return this.state
+      }
+
+      setState(newState = {}) {
+        this.state = {
+          ...this.state,
+          ...newState
+        }
+      }
+    }
+
+    const store = new Store(initialState)
 
     // App node
     function App({ state }) {
@@ -134,34 +153,30 @@
     // Render app helper
     function renderApp(state) {
       ReactDOM.render(
-        React.createElement(App, { state }),
+        <App state={state} />,
         document.getElementById('root')
       )
     }
 
     // First render
-    renderApp(state)
+    renderApp(store.getState())
 
     // Make api call after first render
     api.get('/lots')
       .then(lots => {
-        state = { ...state, lots }
+        store.setState({ lots })
 
         // rerender app after receiving api response with the new state
-        renderApp(state)
+        renderApp(store.getState())
 
         const onPrice = (data) => {
-          const lotsWithUpdatedPrice = state.lots.map(lot => {
+          const lotsWithUpdatedPrice = store.getState().lots.map(lot => {
             if (lot.id !== data.id) return lot
             return { ...lot, price: data.price }
           })
-          state = {
-            ...state,
-            lots: lotsWithUpdatedPrice
-          }
-
+          store.setState({ lots: lotsWithUpdatedPrice })
           // rerender on every price update with the new state
-          renderApp(state)
+          renderApp(store.getState())
         }
 
         // subscribe to a pseudo web socket to update prices for each lots element
@@ -173,11 +188,8 @@
 
     // Rerender the app on each tick (time update)
     setInterval(() => {
-      state = {
-        ...state,
-        currentTime: new Date()
-      }
-      renderApp(state)
+      store.setState({ currentTime: new Date() })
+      renderApp(store.getState())
     }, 1000)
   </script>
 </body>
