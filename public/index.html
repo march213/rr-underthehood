@@ -87,6 +87,10 @@
         },
         subscribe(listener) {
           listeners.push(listener)
+          return () => {
+            const index = this.listeners.indexOf(listener)
+            listeners.splice(index, 1)
+          }
         },
       }
     }
