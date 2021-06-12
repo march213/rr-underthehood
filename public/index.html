@@ -69,14 +69,15 @@
       lots: null
     }
 
-    function createStore(initState) {
+    function createStore(initState, reducer) {
       let state = initState
       let listeners = []
 
       return {
         getState: () => state,
-        dispatch: (cb) => {
-
+        dispatch(action) {
+          state = appReducer(state, action)
+          listeners.forEach(listener => listener())
         },
         setState(newState = {}) {
           state = typeof newState === 'function' ? newState(state) : newState
@@ -94,7 +95,7 @@
       }
     }
 
-    const store = createStore(initialState)
+    const store = createStore(initialState, appReducer)
     store.subscribe(() => {
       renderApp(store.getState())
     })
@@ -176,17 +177,22 @@
     // First render
     renderApp(store.getState())
 
+    // ACTIONS
+    const SET_TIME = 'SET_TIME'
+    const SET_LOTS = 'SET_LOTS'
+    const CHANGE_LOT_PRICE = 'CHANGE_LOT_PRICE'
+
     //
     let handlers = {
-      'setTime': (state, payload) => ({
+      [SET_TIME]: (state, payload) => ({
         ...state,
         currentTime: payload
       }),
-      'setLots': (state, payload) => ({
+      [SET_LOTS]: (state, payload) => ({
         ...state,
         lots: payload
       }),
-      'changeLotPrice': (state, payload) => ({
+      [CHANGE_LOT_PRICE]: (state, payload) => ({
         ...state,
         lots: state.lots.map(lot => {
           if (lot.id !== payload.id) return lot
@@ -205,12 +211,12 @@
     // Make api call after first render
     api.get('/lots')
       .then(lots => {
-        store.setState((prevState) => appReducer(prevState, { type: 'setLots', payload: lots }))
+        store.dispatch({ type: SET_LOTS, payload: lots })
 
         // subscribe to a pseudo web socket to update prices for each lots element
         lots.forEach(lot => {
           stream.subscribe(`price-${lot.id}`, (data) => {
-            store.setState((prevState) => appReducer(prevState, { type: 'changeLotPrice', payload: data }))
+            store.dispatch({ type: CHANGE_LOT_PRICE, payload: data })
           })
         })
       })
@@ -218,7 +224,7 @@
 
     // Rerender the app on each tick (time update)
     setInterval(() => {
-      store.setState((prevState) => appReducer(prevState, { type: 'setTime', payload: new Date() }))
+      store.dispatch({ type: SET_TIME, payload: new Date() })
     }, 1000)
   </script>
 </body>
