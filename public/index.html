@@ -79,16 +79,10 @@
       }
 
       setState(diff = {}) {
-        if (typeof diff === 'function') {
-          this.state = {
-            ...this.state,
-            ...diff(this.state),
-          }
-        } else {
-          this.state = {
-            ...this.state,
-            ...diff
-          }
+        const newState = typeof diff === 'function' ? diff(this.state) : diff
+        this.state = {
+          ...this.state,
+          ...newState,
         }
       }
     }
