@@ -75,12 +75,8 @@
 
       return {
         getState: () => state,
-        setState(diff = {}) {
-          const newState = typeof diff === 'function' ? diff(state) : diff
-          state = {
-            ...state,
-            ...newState,
-          }
+        setState(newState = {}) {
+          state = typeof newState === 'function' ? newState(state) : newState
 
           // exec listeners on every state change
           listeners.forEach(listener => listener())
@@ -177,30 +173,47 @@
     // First render
     renderApp(store.getState())
 
+    function setLots(state, lots) {
+      return {
+        ...state,
+        lots
+      }
+    }
+
+    function changeLotPrice(state, data) {
+      return {
+        ...state,
+        lots: state.lots.map(lot => {
+          if (lot.id !== data.id) return lot
+          return { ...lot, price: data.price }
+        })
+      }
+    }
+
     // Make api call after first render
     api.get('/lots')
       .then(lots => {
-        store.setState({ lots })
-
-        const onPrice = (data) => {
-          store.setState((prevState) => ({
-            lots: prevState.lots.map(lot => {
-              if (lot.id !== data.id) return lot
-              return { ...lot, price: data.price }
-            })
-          }))
-        }
+        store.setState((prevState) => setLots(prevState, lots))
 
         // subscribe to a pseudo web socket to update prices for each lots element
         lots.forEach(lot => {
-          stream.subscribe(`price-${lot.id}`, onPrice)
+          stream.subscribe(`price-${lot.id}`, (data) => {
+            store.setState((prevState) => changeLotPrice(prevState, data))
+          })
         })
       })
       .catch(console.log)
 
+    function setTime(state, time) {
+      return {
+        ...state,
+        currentTime: time
+      }
+    }
+
     // Rerender the app on each tick (time update)
     setInterval(() => {
-      store.setState({ currentTime: new Date() })
+      store.setState((prevState) => setTime(prevState, new Date()))
     }, 1000)
   </script>
 </body>
