@@ -173,19 +173,27 @@
     // First render
     renderApp(store.getState())
 
-    function setLots(state, lots) {
+    // Actions
+    function setTime(state, params) {
       return {
         ...state,
-        lots
+        currentTime: params.time
       }
     }
 
-    function changeLotPrice(state, data) {
+    function setLots(state, params) {
+      return {
+        ...state,
+        lots: params.lots
+      }
+    }
+
+    function changeLotPrice(state, params) {
       return {
         ...state,
         lots: state.lots.map(lot => {
-          if (lot.id !== data.id) return lot
-          return { ...lot, price: data.price }
+          if (lot.id !== params.id) return lot
+          return { ...lot, price: params.price }
         })
       }
     }
@@ -193,7 +201,7 @@
     // Make api call after first render
     api.get('/lots')
       .then(lots => {
-        store.setState((prevState) => setLots(prevState, lots))
+        store.setState((prevState) => setLots(prevState, { lots }))
 
         // subscribe to a pseudo web socket to update prices for each lots element
         lots.forEach(lot => {
@@ -204,16 +212,9 @@
       })
       .catch(console.log)
 
-    function setTime(state, time) {
-      return {
-        ...state,
-        currentTime: time
-      }
-    }
-
     // Rerender the app on each tick (time update)
     setInterval(() => {
-      store.setState((prevState) => setTime(prevState, new Date()))
+      store.setState((prevState) => setTime(prevState, { time: new Date() }))
     }, 1000)
   </script>
 </body>
