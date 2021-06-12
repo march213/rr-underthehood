@@ -173,40 +173,41 @@
     // First render
     renderApp(store.getState())
 
-    // Actions
-    function setTime(state, params) {
-      return {
-        ...state,
-        currentTime: params.time
-      }
-    }
-
-    function setLots(state, params) {
-      return {
-        ...state,
-        lots: params.lots
-      }
-    }
-
-    function changeLotPrice(state, params) {
-      return {
-        ...state,
-        lots: state.lots.map(lot => {
-          if (lot.id !== params.id) return lot
-          return { ...lot, price: params.price }
-        })
+    // 
+    function modifyState(state, action, params) {
+      switch (action) {
+        case 'setTime':
+          return {
+            ...state,
+            currentTime: params.time
+          }
+        case 'setLots':
+          return {
+            ...state,
+            lots: params.lots
+          }
+        case 'changeLotPrice':
+          return {
+            ...state,
+            lots: state.lots.map(lot => {
+              if (lot.id !== params.id) return lot
+              return { ...lot, price: params.price }
+            })
+          }
+        default:
+          return state
       }
     }
 
     // Make api call after first render
     api.get('/lots')
       .then(lots => {
-        store.setState((prevState) => setLots(prevState, { lots }))
+        store.setState((prevState) => modifyState(prevState, 'setLots', { lots }))
 
         // subscribe to a pseudo web socket to update prices for each lots element
         lots.forEach(lot => {
           stream.subscribe(`price-${lot.id}`, (data) => {
-            store.setState((prevState) => changeLotPrice(prevState, data))
+            store.setState((prevState) => modifyState(prevState, 'changeLotPrice', data))
           })
         })
       })
@@ -214,7 +215,7 @@
 
     // Rerender the app on each tick (time update)
     setInterval(() => {
-      store.setState((prevState) => setTime(prevState, { time: new Date() }))
+      store.setState((prevState) => modifyState(prevState, 'setTime', { time: new Date() }))
     }, 1000)
   </script>
 </body>
