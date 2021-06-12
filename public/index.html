@@ -91,10 +91,13 @@
     }
 
     // combine reducers
-    function combineReducers(state, action) {
-      return {
-        clock: clockReducer(state.clock, action),
-        auction: auctionReducer(state.auction, action)
+    function combineReducers(reducers) {
+      return (state, action) => {
+        const result = {}
+        Object.entries(reducers).forEach(([key, reducer]) => {
+          result[key] = reducer(state[key], action)
+        })
+        return result
       }
     }
 
@@ -158,7 +161,10 @@
       }
     }
 
-    const store = createStore(combineReducers)
+    const store = createStore(combineReducers({
+      clock: clockReducer,
+      auction: auctionReducer
+    }))
 
     // subscribe to re-render on every state update
     store.subscribe(() => {
