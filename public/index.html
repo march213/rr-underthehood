@@ -76,7 +76,7 @@
       return {
         getState: () => state,
         dispatch(action) {
-          state = appReducer(state, action)
+          state = reducer(state, action)
           listeners.forEach(listener => listener())
         },
         subscribe(listener) {
