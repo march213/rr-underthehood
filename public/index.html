@@ -15,7 +15,7 @@
 <body>
   <div id="root"></div>
 
-  <script type="text/jsx">
+  <script type="text/babel">
 
     // Imitate API
     const api = {
@@ -78,10 +78,17 @@
         return this.state
       }
 
-      setState(newState = {}) {
-        this.state = {
-          ...this.state,
-          ...newState
+      setState(diff = {}) {
+        if (typeof diff === 'function') {
+          this.state = {
+            ...this.state,
+            ...diff(this.state),
+          }
+        } else {
+          this.state = {
+            ...this.state,
+            ...diff
+          }
         }
       }
     }
@@ -129,7 +136,7 @@
     // Lots node
     function Lots({ lots }) {
       if (lots === null) {
-        return <Loading /> 
+        return <Loading />
       }
 
       return (
@@ -170,11 +177,12 @@
         renderApp(store.getState())
 
         const onPrice = (data) => {
-          const lotsWithUpdatedPrice = store.getState().lots.map(lot => {
-            if (lot.id !== data.id) return lot
-            return { ...lot, price: data.price }
-          })
-          store.setState({ lots: lotsWithUpdatedPrice })
+          store.setState((prevState) => ({
+            lots: prevState.lots.map(lot => {
+              if (lot.id !== data.id) return lot
+              return { ...lot, price: data.price }
+            })
+          }))
           // rerender on every price update with the new state
           renderApp(store.getState())
         }
