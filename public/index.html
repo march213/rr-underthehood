@@ -90,41 +90,56 @@
       }
     }
 
-    // Action handlers
-    let handlers = {
-      [SET_TIME]: (state, payload) => ({
-        ...state,
-        currentTime: payload
-      }),
-      [SET_LOTS]: (state, payload) => ({
-        ...state,
-        lots: payload
-      }),
-      [CHANGE_LOT_PRICE]: (state, payload) => ({
-        ...state,
-        lots: state.lots.map(lot => {
-          if (lot.id !== payload.id) return lot
-          return { ...lot, price: payload.price }
-        })
-      })
+    // combine reducers
+    function combineReducers(state, action) {
+      return {
+        clock: clockReducer(state.clock, action),
+        auction: auctionReducer(state.auction, action)
+      }
     }
 
-    // main reducer
-    function appReducer(state = {}, action) {
-      if (handlers[action.type]) {
-        return handlers[action.type](state, action.payload)
+    function clockReducer(state = clockInitialState, action) {
+      switch (action.type) {
+        case SET_TIME:
+          return {
+            ...state,
+            time: action.payload
+          }
+        default:
+          return state
       }
-      return state
+    }
+
+    function auctionReducer(state = auctionInitialState, action) {
+      switch (action.type) {
+        case SET_LOTS:
+          return {
+            ...state,
+            lots: action.payload
+          }
+        case CHANGE_LOT_PRICE:
+          return {
+            ...state,
+            lots: state.lots.map(lot => {
+              if (lot.id !== action.payload.id) return lot
+              return { ...lot, price: action.payload.price }
+            })
+          }
+        default:
+          return state
+      }
     }
 
     // State
-    const initialState = {
-      currentTime: new Date(),
+    const clockInitialState = {
+      time: new Date(),
+    }
+    const auctionInitialState = {
       lots: null
     }
 
-    function createStore(initState, reducer) {
-      let state = initState
+    function createStore(reducer) {
+      let state = reducer(state = {}, { type: '' })
       let listeners = []
 
       return {
@@ -143,7 +158,7 @@
       }
     }
 
-    const store = createStore(initialState, appReducer)
+    const store = createStore(combineReducers)
 
     // subscribe to re-render on every state update
     store.subscribe(() => {
@@ -155,8 +170,8 @@
       return (
         <main className="app">
           <Header />
-          <Clock time={state.currentTime} />
-          <Lots lots={state.lots} />
+          <Clock time={state.clock.time} />
+          <Lots lots={state.auction.lots} />
         </main>
       )
     }
