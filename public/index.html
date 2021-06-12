@@ -69,34 +69,29 @@
       lots: null
     }
 
-    class Store {
-      constructor(state = {}) {
-        this.state = state
-        this.listeners = []
-      }
+    function createStore(initState) {
+      let state = initState
+      let listeners = []
 
-      getState() {
-        return this.state
-      }
+      return {
+        getState: () => state,
+        setState(diff = {}) {
+          const newState = typeof diff === 'function' ? diff(state) : diff
+          state = {
+            ...state,
+            ...newState,
+          }
 
-      setState(diff = {}) {
-        const newState = typeof diff === 'function' ? diff(this.state) : diff
-        this.state = {
-          ...this.state,
-          ...newState,
-        }
-
-        this.listeners.forEach((listener) => {
-          listener()
-        })
-      }
-
-      subscribe(callback) {
-        this.listeners.push(callback)
+          // exec listeners on every state change
+          listeners.forEach(listener => listener())
+        },
+        subscribe(listener) {
+          listeners.push(listener)
+        },
       }
     }
 
-    const store = new Store(initialState)
+    const store = createStore(initialState)
     store.subscribe(() => {
       renderApp(store.getState())
     })
