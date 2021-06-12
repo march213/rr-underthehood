@@ -79,12 +79,6 @@
           state = appReducer(state, action)
           listeners.forEach(listener => listener())
         },
-        setState(newState = {}) {
-          state = typeof newState === 'function' ? newState(state) : newState
-
-          // exec listeners on every state change
-          listeners.forEach(listener => listener())
-        },
         subscribe(listener) {
           listeners.push(listener)
           return () => {
