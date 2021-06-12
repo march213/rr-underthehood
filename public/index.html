@@ -63,6 +63,60 @@
       }
     }
 
+    // ACTIONS
+    const SET_TIME = 'SET_TIME'
+    const SET_LOTS = 'SET_LOTS'
+    const CHANGE_LOT_PRICE = 'CHANGE_LOT_PRICE'
+
+    // Action creators
+    function setTime(time) {
+      return {
+        type: SET_TIME,
+        payload: time,
+      }
+    }
+
+    function setLots(lots) {
+      return {
+        type: SET_LOTS,
+        payload: lots,
+      }
+    }
+
+    function changeLotPrice(data) {
+      return {
+        type: CHANGE_LOT_PRICE,
+        payload: data,
+      }
+    }
+
+    // Action handlers
+    let handlers = {
+      [SET_TIME]: (state, payload) => ({
+        ...state,
+        currentTime: payload
+      }),
+      [SET_LOTS]: (state, payload) => ({
+        ...state,
+        lots: payload
+      }),
+      [CHANGE_LOT_PRICE]: (state, payload) => ({
+        ...state,
+        lots: state.lots.map(lot => {
+          if (lot.id !== payload.id) return lot
+          return { ...lot, price: payload.price }
+        })
+      })
+    }
+
+    // main reducer
+    function appReducer(state = {}, action) {
+      if (handlers[action.type]) {
+        return handlers[action.type](state, action.payload)
+      }
+      return state
+    }
+
     // State
     const initialState = {
       currentTime: new Date(),
@@ -90,6 +144,8 @@
     }
 
     const store = createStore(initialState, appReducer)
+
+    // subscribe to re-render on every state update
     store.subscribe(() => {
       renderApp(store.getState())
     })
@@ -171,46 +227,15 @@
     // First render
     renderApp(store.getState())
 
-    // ACTIONS
-    const SET_TIME = 'SET_TIME'
-    const SET_LOTS = 'SET_LOTS'
-    const CHANGE_LOT_PRICE = 'CHANGE_LOT_PRICE'
-
-    //
-    let handlers = {
-      [SET_TIME]: (state, payload) => ({
-        ...state,
-        currentTime: payload
-      }),
-      [SET_LOTS]: (state, payload) => ({
-        ...state,
-        lots: payload
-      }),
-      [CHANGE_LOT_PRICE]: (state, payload) => ({
-        ...state,
-        lots: state.lots.map(lot => {
-          if (lot.id !== payload.id) return lot
-          return { ...lot, price: payload.price }
-        })
-      })
-    }
-
-    function appReducer(state, action) {
-      if (handlers[action.type]) {
-        return handlers[action.type](state, action.payload)
-      }
-      return state
-    }
-
     // Make api call after first render
     api.get('/lots')
       .then(lots => {
-        store.dispatch({ type: SET_LOTS, payload: lots })
+        store.dispatch(setLots(lots))
 
         // subscribe to a pseudo web socket to update prices for each lots element
         lots.forEach(lot => {
           stream.subscribe(`price-${lot.id}`, (data) => {
-            store.dispatch({ type: CHANGE_LOT_PRICE, payload: data })
+            store.dispatch(changeLotPrice(data))
           })
         })
       })
@@ -218,7 +243,7 @@
 
     // Rerender the app on each tick (time update)
     setInterval(() => {
-      store.dispatch({ type: SET_TIME, payload: new Date() })
+      store.dispatch(setTime(new Date()))
     }, 1000)
   </script>
 </body>
