@@ -72,6 +72,7 @@
     class Store {
       constructor(state = {}) {
         this.state = state
+        this.listeners = []
       }
 
       getState() {
@@ -84,10 +85,21 @@
           ...this.state,
           ...newState,
         }
+
+        this.listeners.forEach((listener) => {
+          listener()
+        })
+      }
+
+      subscribe(callback) {
+        this.listeners.push(callback)
       }
     }
 
     const store = new Store(initialState)
+    store.subscribe(() => {
+      renderApp(store.getState())
+    })
 
     // App node
     function App({ state }) {
@@ -102,7 +114,11 @@
 
     // Header node
     function Header() {
-      return <header className="header"><Logo /></header>
+      return (
+        <header className="header">
+          <Logo />
+        </header>
+      )
     }
 
     // Logo node
@@ -167,9 +183,6 @@
       .then(lots => {
         store.setState({ lots })
 
-        // rerender app after receiving api response with the new state
-        renderApp(store.getState())
-
         const onPrice = (data) => {
           store.setState((prevState) => ({
             lots: prevState.lots.map(lot => {
@@ -177,8 +190,6 @@
               return { ...lot, price: data.price }
             })
           }))
-          // rerender on every price update with the new state
-          renderApp(store.getState())
         }
 
         // subscribe to a pseudo web socket to update prices for each lots element
@@ -191,7 +202,6 @@
     // Rerender the app on each tick (time update)
     setInterval(() => {
       store.setState({ currentTime: new Date() })
-      renderApp(store.getState())
     }, 1000)
   </script>
 </body>
