@@ -304,10 +304,10 @@
       })
     }
 
-    function BtnFavorite({ active, id }) {
+    function BtnFavorite({ active, favorite, unfavorite }) {
       if (active) {
         return (
-          <button className="btn-favorite active" onClick={() => unfavorite(id)}>
+          <button className="btn-favorite active" onClick={unfavorite}>
             <IconHeartFilled />
             Remove from favorite
           </button>
@@ -315,7 +315,7 @@
       }
 
       return (
-        <button className="btn-favorite" onClick={() => favorite(id)}>
+        <button className="btn-favorite" onClick={favorite}>
           <IconHeart />
           Add to favorite
         </button>
@@ -323,13 +323,17 @@
     }
 
     // Lot node
-    function Lot({ lot, key }) {
+    function Lot({ lot }) {
       return (
         <article className={`lot ${lot.favorite ? 'favorite' : ''}`}>
           <div className="price">{lot.price}</div>
           <h1>{lot.name}</h1>
           <p>{lot.description}</p>
-          <BtnFavorite active={lot.favorite} id={lot.id} />
+          <BtnFavorite
+            active={lot.favorite}
+            favorite={() => favorite(lot.id)}
+            unfavorite={() => unfavorite(lot.id)}
+          />
         </article>
       )
     }
