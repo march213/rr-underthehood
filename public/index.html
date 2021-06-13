@@ -47,7 +47,21 @@
           default:
             throw new Error('Unknown address')
         }
-      }
+      },
+      post(url) {
+        if (/^\/lots\/(\d+)\/favorite$/.exec(url)) {
+          return new Promise((resolve) => {
+            setTimeout(() => resolve({}), 500)
+          })
+        }
+        if (/^\/lots\/(\d+)\/unfavorite$/.exec(url)) {
+          return new Promise((resolve) => {
+            setTimeout(() => resolve({}), 500)
+          })
+        }
+
+        throw new Error('Unknown address')
+      },
     }
 
     // Imitate web sockets
@@ -278,10 +292,22 @@
       )
     }
 
+    function favorite(id) {
+      api.post(`/lots/${id}/favorite`).then(() => {
+        store.dispatch(favoriteLot(id))
+      })
+    }
+
+    function unfavorite(id) {
+      api.post(`/lots/${id}/unfavorite`).then(() => {
+        store.dispatch(unfavoriteLot(id))
+      })
+    }
+
     function BtnFavorite({ active, id }) {
       if (active) {
         return (
-          <button className="btn-favorite active" onClick={() => store.dispatch(unfavoriteLot(id))}>
+          <button className="btn-favorite active" onClick={() => unfavorite(id)}>
             <IconHeartFilled />
             Remove from favorite
           </button>
@@ -289,7 +315,7 @@
       }
 
       return (
-        <button className="btn-favorite" onClick={() => store.dispatch(favoriteLot(id))}>
+        <button className="btn-favorite" onClick={() => favorite(id)}>
           <IconHeart />
           Add to favorite
         </button>
