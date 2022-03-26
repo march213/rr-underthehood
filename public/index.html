@@ -1,297 +1,326 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>React Redux UnderTheHood</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
 
-<head>
-  <meta charset="UTF-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>React Redux UnderTheHood</title>
-  <link rel="stylesheet" href="styles.css">
-</head>
+  <body>
+    <div id="root"></div>
 
-<body>
-  <div id="root"></div>
+    <script>
+      // Imitate API
+      const api = {
+        get(url) {
+          switch (url) {
+            case "/lots":
+              return new Promise((resolve, _) => {
+                const mockLots = [
+                  {
+                    id: 1,
+                    name: "Apple",
+                    description: "Apple description",
+                    price: 16,
+                  },
+                  {
+                    id: 2,
+                    name: "Orange",
+                    description: "Orange description",
+                    price: 41,
+                  },
+                ];
 
-  <script>
+                // resolve promise with mocked lots after timeout to imitate fetching
+                setTimeout(() => {
+                  resolve(mockLots);
+                }, 1000);
+              });
+            default:
+              throw new Error("Unknown address");
+          }
+        },
+      };
 
-    // Imitate API
-    const api = {
-      get(url) {
-        switch (url) {
-          case '/lots':
-            return new Promise((resolve, _) => {
-              const mockLots = [
-                {
-                  id: 1,
-                  name: "Apple",
-                  description: "Apple description",
-                  price: 16
-                }, {
-                  id: 2,
-                  name: "Orange",
-                  description: "Orange description",
-                  price: 41
-                }]
+      // Imitate web sockets
+      const stream = {
+        subscribe(channel, listener) {
+          const match = /price-(\d+)/.exec(channel);
+          if (match) {
+            setInterval(() => {
+              listener({
+                id: parseInt(match[1]),
+                price: Math.round(Math.random() * 10 + 30),
+              });
+            }, 400);
+          }
+        },
+      };
 
-              // resolve promise with mocked lots after timeout to imitate fetching
-              setTimeout(() => {
-                resolve(mockLots)
-              }, 1000)
+      // State
+      let state = {
+        currentTime: new Date(),
+        lots: null,
+      };
 
-            })
-          default:
-            throw new Error('Unknown address')
-        }
+      const VDom = {
+        // Factory
+        createElement: (type, config, ...children) => {
+          const props = config || {};
+          const key = props.key || null;
+
+          if (children.length === 1) {
+            props.children = children[0];
+          } else {
+            props.children = children;
+          }
+
+          return {
+            type,
+            key,
+            props,
+          };
+        },
+      };
+
+      // App node
+      function App({ state }) {
+        return VDom.createElement("main", { className: "app" }, [
+          VDom.createElement(Header),
+          VDom.createElement(Clock, { time: state.currentTime }),
+          VDom.createElement(Lots, { lots: state.lots }),
+        ]);
       }
-    }
 
-    // Imitate web sockets
-    const stream = {
-      subscribe(channel, listener) {
-        const match = /price-(\d+)/.exec(channel)
-        if (match) {
-          setInterval(() => {
-            listener({
-              id: parseInt(match[1]),
-              price: Math.round(Math.random() * 10 + 30)
-            })
-          }, 400)
-        }
+      // Header node
+      function Header() {
+        return VDom.createElement(
+          "header",
+          { className: "header" },
+          VDom.createElement(Logo)
+        );
       }
-    }
 
-    // State
-    let state = {
-      currentTime: new Date(),
-      lots: null
-    }
+      // Logo node
+      function Logo() {
+        return VDom.createElement("img", {
+          className: "logo",
+          src: "./chilli.png",
+          alt: "Chilli illustration",
+        });
+      }
 
-    const VDom = {
-      // Factory
-      createElement: (type, config, ...children) => {
-        const props = config || {}
-        const key = props.key || null
+      // Clock node
+      function Clock({ time }) {
+        const isDay = time.getHours() >= 7 && time.getHours() <= 21;
 
-        if (children.length === 1) {
-          props.children = children[0]
-        } else {
-          props.children = children
+        return VDom.createElement("div", { className: "clock" }, [
+          VDom.createElement(
+            "span",
+            { className: "value" },
+            time.toLocaleTimeString()
+          ),
+          VDom.createElement("span", {
+            className: isDay ? "icon day" : "icon night",
+          }),
+        ]);
+      }
+
+      // Loading node
+      function Loading() {
+        return VDom.createElement("div", { className: "loading" }, "Loading");
+      }
+
+      // Lots node
+      function Lots({ lots }) {
+        if (lots === null) {
+          return VDom.createElement(Loading);
         }
+
+        return VDom.createElement(
+          "div",
+          { className: "lots" },
+          lots.map((lot) => ({ type: Lot, props: { lot, key: lot.id } }))
+        );
+      }
+
+      // Lot node
+      function Lot({ lot, key }) {
+        return VDom.createElement("article", { className: "lot", key }, [
+          VDom.createElement("div", { className: "price" }, lot.price),
+          VDom.createElement("h1", {}, lot.name),
+          VDom.createElement("p", {}, lot.description),
+        ]);
+      }
+
+      // Render app helper
+      function renderApp(state) {
+        render(
+          VDom.createElement(App, { state }),
+          document.getElementById("root")
+        );
+      }
+
+      // First render
+      renderApp(state);
+
+      // Make api call after first render
+      api
+        .get("/lots")
+        .then((lots) => {
+          state = { ...state, lots };
+
+          // rerender app after receiving api response with the new state
+          renderApp(state);
+
+          const onPrice = (data) => {
+            const lotsWithUpdatedPrice = state.lots.map((lot) => {
+              if (lot.id !== data.id) return lot;
+              return { ...lot, price: data.price };
+            });
+            state = {
+              ...state,
+              lots: lotsWithUpdatedPrice,
+            };
+
+            // rerender on every price update with the new state
+            renderApp(state);
+          };
+
+          // subscribe to a pseudo web socket to update prices for each lots element
+          lots.forEach((lot) => {
+            stream.subscribe(`price-${lot.id}`, onPrice);
+          });
+        })
+        .catch(console.log);
+
+      // Rerender the app on each tick (time update)
+      setInterval(() => {
+        state = {
+          ...state,
+          currentTime: new Date(),
+        };
+        renderApp(state);
+      }, 1000);
+
+      // Render implementation
+      // 1.  before   main.app     div#root > main.app
+      // 2.  after    div#root > main.app     div#root > main.app
+      function render(virtualDom, realDomRoot) {
+        const evaluatedVirtualDom = evaluate(virtualDom);
+        const virtualDomRoot = {
+          type: realDomRoot.tagName.toLowerCase(),
+          props: {
+            id: realDomRoot.id,
+            ...realDomRoot.attributes,
+            children: [evaluatedVirtualDom],
+          },
+        };
+
+        sync(virtualDomRoot, realDomRoot);
+      }
+
+      function evaluate(virtualNode) {
+        if (typeof virtualNode !== "object") {
+          return virtualNode;
+        }
+
+        if (typeof virtualNode.type === "function") {
+          return evaluate(virtualNode.type(virtualNode.props));
+        }
+
+        const props = virtualNode.props || {};
 
         return {
-          type,
-          key,
-          props,
+          ...virtualNode,
+          props: {
+            ...props,
+            children: Array.isArray(props.children)
+              ? props.children.map(evaluate)
+              : [evaluate(props.children)],
+          },
+        };
+      }
+
+      function sync(virtualNode, realNode) {
+        // Sync element
+        if (virtualNode.props) {
+          Object.entries(virtualNode.props).forEach(([name, value]) => {
+            if (name === "children" && name === "key") return;
+
+            if (realNode[name] !== value) {
+              realNode[name] = value;
+            }
+          });
         }
-      }
-    }
 
-    // App node
-    function App({ state }) {
-      return VDom.createElement('main', { className: 'app' }, [
-        VDom.createElement(Header),
-        VDom.createElement(Clock, { time: state.currentTime }),
-        VDom.createElement(Lots, { lots: state.lots })
-      ])
-    }
+        if (virtualNode.key) {
+          realNode.dataset.key = virtualNode.key;
+        }
 
-    // Header node
-    function Header() {
-      return VDom.createElement('header', { className: 'header' }, VDom.createElement(Logo))
-    }
+        if (
+          typeof virtualNode !== "object" &&
+          virtualNode !== realNode.nodeValue
+        ) {
+          realNode.nodeValue = virtualNode;
+        }
 
-    // Logo node
-    function Logo() {
-      return VDom.createElement('img', {
-        className: 'logo',
-        src: './chilli.png',
-        alt: 'Chilli illustration'
-      })
-    }
+        // Sync child nodes
+        const virtualChildren = virtualNode.props
+          ? virtualNode.props.children || []
+          : [];
+        const realChildren = realNode.childNodes;
 
-    // Clock node
-    function Clock({ time }) {
-      const isDay = time.getHours() >= 7 && time.getHours() <= 21
+        for (
+          let i = 0;
+          i < virtualChildren.length || i < realChildren.length;
+          i++
+        ) {
+          const virtual = virtualChildren[i];
+          const real = realChildren[i];
 
-      return VDom.createElement('div', { className: 'clock', }, [
-        VDom.createElement('span', { className: 'value' }, time.toLocaleTimeString()),
-        VDom.createElement('span', { className: isDay ? 'icon day' : 'icon night' })
-      ])
-    }
-
-    // Loading node
-    function Loading() {
-      return VDom.createElement('div', { className: 'loading', }, 'Loading')
-    }
-
-    // Lots node
-    function Lots({ lots }) {
-      if (lots === null) {
-        return VDom.createElement(Loading)
-      }
-
-      return VDom.createElement(
-        'div',
-        { className: 'lots' },
-        lots.map(lot => ({ type: Lot, props: { lot, key: lot.id } })))
-    }
-
-    // Lot node
-    function Lot({ lot, key }) {
-      return VDom.createElement('article', { className: 'lot', key }, [
-        VDom.createElement('div', { className: 'price', }, lot.price),
-        VDom.createElement('h1', {}, lot.name),
-        VDom.createElement('p', {}, lot.description),
-      ])
-    }
-
-    // Render app helper
-    function renderApp(state) {
-      render(
-        VDom.createElement(App, { state }),
-        document.getElementById('root')
-      )
-    }
-
-    // First render
-    renderApp(state)
-
-    // Make api call after first render
-    api.get('/lots')
-      .then(lots => {
-        state = { ...state, lots }
-
-        // rerender app after receiving api response with the new state
-        renderApp(state)
-
-        const onPrice = (data) => {
-          const lotsWithUpdatedPrice = state.lots.map(lot => {
-            if (lot.id !== data.id) return lot
-            return { ...lot, price: data.price }
-          })
-          state = {
-            ...state,
-            lots: lotsWithUpdatedPrice
+          // Remove
+          if (virtual === undefined && real !== undefined) {
+            realNode.remove(real);
           }
 
-          // rerender on every price update with the new state
-          renderApp(state)
-        }
-
-        // subscribe to a pseudo web socket to update prices for each lots element
-        lots.forEach(lot => {
-          stream.subscribe(`price-${lot.id}`, onPrice)
-        })
-      })
-      .catch(console.log)
-
-    // Rerender the app on each tick (time update)
-    setInterval(() => {
-      state = {
-        ...state,
-        currentTime: new Date()
-      }
-      renderApp(state)
-    }, 1000)
-
-    // Render implementation
-    // 1.  before   main.app     div#root > main.app
-    // 2.  after    div#root > main.app     div#root > main.app
-    function render(virtualDom, realDomRoot) {
-      const evaluatedVirtualDom = evaluate(virtualDom)
-      const virtualDomRoot = {
-        type: realDomRoot.tagName.toLowerCase(),
-        props: {
-          id: realDomRoot.id,
-          ...realDomRoot.attributes,
-          children: [evaluatedVirtualDom]
-        }
-      }
-
-      sync(virtualDomRoot, realDomRoot)
-    }
-
-    function evaluate(virtualNode) {
-      if (typeof virtualNode !== 'object') {
-        return virtualNode
-      }
-
-      if (typeof virtualNode.type === 'function') {
-        return evaluate((virtualNode.type)(virtualNode.props))
-      }
-
-      const props = virtualNode.props || {}
-
-      return {
-        ...virtualNode,
-        props: {
-          ...props,
-          children: Array.isArray(props.children) ? props.children.map(evaluate) : [evaluate(props.children)]
-        }
-      }
-    }
-
-    function sync(virtualNode, realNode) {
-      // Sync element
-      if (virtualNode.props) {
-        Object.entries(virtualNode.props).forEach(([name, value]) => {
-          if (name === 'children' && name === 'key') return
-
-          if (realNode[name] !== value) {
-            realNode[name] = value
+          // Update
+          if (
+            virtual !== undefined &&
+            real !== undefined &&
+            (virtual.type || "") === (real.tagName || "").toLowerCase()
+          ) {
+            sync(virtual, real);
           }
-        })
-      }
 
-      if (virtualNode.key) {
-        realNode.dataset.key = virtualNode.key
-      }
+          // Replace
+          if (
+            virtual !== undefined &&
+            real !== undefined &&
+            (virtual.type || "") !== (real.tagName || "").toLowerCase()
+          ) {
+            const newReal = createRealNodeByVirtual(virtual);
+            sync(virtual, newReal);
+            realNode.replaceChild(newReal, real);
+          }
 
-      if (typeof virtualNode !== 'object' && virtualNode !== realNode.nodeValue) {
-        realNode.nodeValue = virtualNode
-      }
-
-      // Sync child nodes
-      const virtualChildren = virtualNode.props ? virtualNode.props.children || [] : []
-      const realChildren = realNode.childNodes
-
-      for (let i = 0; i < virtualChildren.length || i < realChildren.length; i++) {
-        const virtual = virtualChildren[i]
-        const real = realChildren[i]
-
-        // Remove
-        if (virtual === undefined && real !== undefined) {
-          realNode.remove(real)
-        }
-
-        // Update
-        if (virtual !== undefined && real !== undefined && (virtual.type || '') === (real.tagName || '').toLowerCase()) {
-          sync(virtual, real)
-        }
-
-        // Replace
-        if (virtual !== undefined && real !== undefined && (virtual.type || '') !== (real.tagName || '').toLowerCase()) {
-          const newReal = createRealNodeByVirtual(virtual)
-          sync(virtual, newReal)
-          realNode.replaceChild(newReal, real)
-        }
-
-        // Add
-        if (virtual !== undefined && real === undefined) {
-          const newReal = createRealNodeByVirtual(virtual)
-          sync(virtual, newReal)
-          realNode.appendChild(newReal)
+          // Add
+          if (virtual !== undefined && real === undefined) {
+            const newReal = createRealNodeByVirtual(virtual);
+            sync(virtual, newReal);
+            realNode.appendChild(newReal);
+          }
         }
       }
-    }
 
-    function createRealNodeByVirtual(virtual) {
-      if (typeof virtual !== 'object') {
-        return document.createTextNode('')
+      function createRealNodeByVirtual(virtual) {
+        if (typeof virtual !== "object") {
+          return document.createTextNode("");
+        }
+        return document.createElement(virtual.type);
       }
-      return document.createElement(virtual.type)
-    }
-  </script>
-</body>
-
+    </script>
+  </body>
 </html>
